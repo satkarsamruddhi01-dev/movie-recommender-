@@ -1,21 +1,23 @@
 import streamlit as st
 import pickle
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.neighbors import NearestNeighbors
 
 movies = pickle.load(open('movies.pkl','rb'))
-model = pickle.load(open('knn_model.pkl','rb'))
-vectors = pickle.load(open('vectors.pkl','rb'))
 
-st.set_page_config(page_title="Movie Recommendation System")
+cv = CountVectorizer(max_features=5000, stop_words='english')
+vectors = cv.fit_transform(movies['tags']).toarray()
+
+model = NearestNeighbors(n_neighbors=6, metric='cosine')
+model.fit(vectors)
 
 st.title("🎬 Movie Recommendation System")
 
-movie_list = movies['title'].values
-selected_movie = st.selectbox("Select Movie", movie_list)
+movie = st.selectbox("Select Movie", movies['title'].values)
 
 if st.button("Recommend"):
-    index = movies[movies['title'] == selected_movie].index[0]
+    index = movies[movies['title']==movie].index[0]
     distances, indices = model.kneighbors([vectors[index]])
 
-    st.subheader("Recommended Movies:")
     for i in indices[0][1:]:
-        st.write("👉 " + movies.iloc[i].title)
+        st.write(movies.iloc[i].title)
